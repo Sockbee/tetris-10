@@ -54,6 +54,7 @@ int blocks[7][4][4][4] = {
 int b_type; //블록 종류를 저장 
 int b_rotation; //블록 회전값 저장 
 int b_type_next; //다음 블록값 저장 
+int cnt_b_rot_again;
 
 int main_org[MAIN_Y][MAIN_X]; //게임판의 정보를 저장하는 배열 모니터에 표시후에 main_cpy로 복사됨 
 int main_cpy[MAIN_Y][MAIN_X]; //즉 maincpy는 게임판이 모니터에 표시되기 전의 정보를 가지고 있음 
@@ -305,7 +306,8 @@ void new_block(void) { //새로운 블록 생성
     by = 0;  //블록 생성위치 y좌표(제일 위) 
     b_type = b_type_next; //다음블럭값을 가져옴 
     b_type_next = rand() % 7; //다음 블럭을 만듦 
-    b_rotation = 0;  //회전은 0번으로 가져옴 
+    b_rotation = 0;  //회전은 0번으로 가져옴
+    cnt_b_rot_again = 0;
 
     new_block_on = 0; //new_block flag를 끔  
 
@@ -484,8 +486,9 @@ void move_block(int dir) { //블록을 이동시킴
                 }
             }
             else if (b_type >= 4 && b_type < 7) {
-                if (b_rotation < 7) {
-                    b_rotation++;
+                if (cnt_b_rot_again < 7) {
+                    cnt_b_rot_again++;
+                    b_rotation = (b_rotation + 1) % 4;
                 }
             }
         }
