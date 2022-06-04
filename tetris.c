@@ -74,7 +74,7 @@ int best_score = 0; //최고게임점수
 int new_block_on = 0; //새로운 블럭이 필요함을 알리는 flag 
 int crush_on = 0; //현재 이동중인 블록이 충돌상태인지 알려주는 flag 
 int level_up_on = 0; //다음레벨로 진행(현재 레벨목표가 완료되었음을) 알리는 flag 
-int space_key_on = 0; //hard drop상태임을 알려주는 flag 
+int space_key_on = 0; //hard drop상태임을 알려주는 flag
 
 void title(void); //게임시작화면 
 void reset(void); //게임판 초기화 
@@ -377,6 +377,23 @@ void check_key(void) {
 void drop_block(void) {
     int i, j;
 
+    if (level >= 7) {
+        if (check_crush(bx, by, (b_rotation + 1) % 4) == true) {
+            for (i = 0; i < 4; i++) { //현재좌표의 블럭을 지움  
+                for (j = 0; j < 4; j++) {
+                    if (blocks[b_type][b_rotation][i][j] == 1) main_org[by + i][bx + j] = EMPTY;
+                }
+            }
+            b_rotation = (b_rotation + 1) % 4; //회전값을 1증가시킴(3에서 4가 되는 경우는 0으로 되돌림) 
+            for (i = 0; i < 4; i++) { //회전된 블록을 찍음 
+                for (j = 0; j < 4; j++) {
+                    if (blocks[b_type][b_rotation][i][j] == 1) main_org[by + i][bx + j] = ACTIVE_BLOCK;
+                }
+            }
+        }
+        //회전할 수 있는지 체크 후 가능하면 회전
+    }
+
     if (crush_on && check_crush(bx, by + 1, b_rotation) == true) crush_on = 0; //밑이 비어있으면 crush flag 끔 
     if (crush_on && check_crush(bx, by + 1, b_rotation) == false) { //밑이 비어있지않고 crush flag가 켜저있으면 
         for (i = 0; i < MAIN_Y; i++) { //현재 조작중인 블럭을 굳힘 
@@ -455,13 +472,24 @@ void move_block(int dir) { //블록을 이동시킴
             for (j = 0; j < 4; j++) {
                 if (blocks[b_type][b_rotation][i][j] == 1) main_org[by + i][bx + j] = EMPTY;
             }
-        }
-        //b_rotation = (b_rotation + 1) % 4; //회전값을 1증가시킴(3에서 4가 되는 경우는 0으로 되돌림) 
+        } 
         
         if (level == 1 || level == 2) {
-            b_rotation = (b_rotation + 1) % 4;
+            b_rotation = (b_rotation + 1) % 4; //회전값을 1증가시킴(3에서 4가 되는 경우는 0으로 되돌림) 
         }
-        else if (level >= 3) {
+        else if (level == 3 || level == 4) {
+            if (b_type >= 1 && b_type < 4) {
+                if (b_rotation < 3) {
+                    b_rotation++;
+                }
+            }
+            else if (b_type >= 4 && b_type < 7) {
+                if (b_rotation < 7) {
+                    b_rotation++;
+                }
+            }
+        }
+        else if (level == 5 || level == 6) {
             if (b_type >= 1 && b_type < 4) {
                 if (b_rotation < 1) {
                     b_rotation++;
