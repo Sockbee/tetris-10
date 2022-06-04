@@ -456,7 +456,24 @@ void move_block(int dir) { //블록을 이동시킴
                 if (blocks[b_type][b_rotation][i][j] == 1) main_org[by + i][bx + j] = EMPTY;
             }
         }
-        b_rotation = (b_rotation + 1) % 4; //회전값을 1증가시킴(3에서 4가 되는 경우는 0으로 되돌림) 
+        //b_rotation = (b_rotation + 1) % 4; //회전값을 1증가시킴(3에서 4가 되는 경우는 0으로 되돌림) 
+        
+        if (level == 1 || level == 2) {
+            b_rotation = (b_rotation + 1) % 4;
+        }
+        else if (level >= 3) {
+            if (b_type >= 1 && b_type < 4) {
+                if (b_rotation < 1) {
+                    b_rotation++;
+                }
+            }
+            else if (b_type >= 4 && b_type < 7) {
+                if (b_rotation < 3) {
+                    b_rotation++;
+                }
+            }
+        }
+
         for (i = 0; i < 4; i++) { //회전된 블록을 찍음 
             for (j = 0; j < 4; j++) {
                 if (blocks[b_type][b_rotation][i][j] == 1) main_org[by + i][bx + j] = ACTIVE_BLOCK;
@@ -525,7 +542,7 @@ void check_line(void) {
 void check_level_up(void) {
     int i, j;
 
-    if (cnt >= 10) { //레벨별로 10줄씩 없애야함. 10줄이상 없앤 경우 
+    if (cnt >= 3) { //레벨별로 3줄씩 없애야함. 10줄이상 없앤 경우 
         draw_main();
         level_up_on = 1; //레벨업 flag를 띄움 
         level += 1; //레벨을 1 올림 
