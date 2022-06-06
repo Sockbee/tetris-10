@@ -13,6 +13,8 @@
 #define p 112 //일시정지 
 #define P 80 //일시정지
 #define ESC 27 //게임종료 
+#define N 78 //새로운 모양으로 변경
+#define n 110 //새로운 모양으로 변경
 
 #define false 0
 #define true 1
@@ -91,7 +93,8 @@ void move_block(int dir); //dir방향으로 블록을 움직임
 void check_line(void); //줄이 가득찼는지를 판단하고 지움 
 void check_level_up(void); //레벨목표가 달성되었는지를 판단하고 levelup시킴 
 void check_game_over(void); //게임오버인지 판단하고 게임오버를 진행 
-void pause(void);//게임을 일시정지시킴 
+void pause(void);//게임을 일시정지시킴
+void change_n_block(void);//블럭이 마음에 안 들때 새로운 블럭으로 교체
 
 void gotoxy(int x, int y) { //gotoxy함수 
     COORD pos = { 2 * x,y };
@@ -165,6 +168,7 @@ void title(void) {
     gotoxy(x, y + 12); printf(" SPACE : Hard Drop");
     gotoxy(x, y + 13); printf("   P   : Pause");
     gotoxy(x, y + 14); printf("  ESC  : Quit");
+    gotoxy(x, y + 14); printf("   N   : Change to new block");
     gotoxy(x, y + 16); printf("BONUS FOR HARD DROPS / COMBOS");
 
     for (cnt = 0;; cnt++) { //cnt를 1씩 증가시키면서 계속 반복    //하나도 안중요한 별 반짝이는 애니메이션효과 
@@ -255,7 +259,7 @@ void draw_map(void) { //게임 상태 표시를 나타내는 함수
     gotoxy(STATUS_X_ADJ, y + 11); printf("        %6d", last_score);
     gotoxy(STATUS_X_ADJ, y + 12); printf(" BEST SCORE :");
     gotoxy(STATUS_X_ADJ, y + 13); printf("        %6d", best_score);
-    gotoxy(STATUS_X_ADJ, y + 15); printf("  △   : Shift        SPACE : Hard Drop");
+    gotoxy(STATUS_X_ADJ, y + 15); printf("  △   : Shift        SPACE : Hard Drop   N : Change to new block");
     gotoxy(STATUS_X_ADJ, y + 16); printf("◁  ▷ : Left / Right   P   : Pause");
     gotoxy(STATUS_X_ADJ, y + 17); printf("  ▽   : Soft Drop     ESC  : Quit");
     gotoxy(STATUS_X_ADJ, y + 20); printf("blog.naver.com/azure0777");
@@ -367,6 +371,11 @@ void check_key(void) {
             case p: //p(소문자) 눌렀을때 
                 pause(); //일시정지 
                 break;
+            case N: //N(대문자) 눌렀을때
+            case n: //n(소문자) 눌렀을때
+                change_n_block();
+                    //여기에 코드 추가
+                break;
             case ESC: //ESC눌렀을때 
                 system("cls"); //화면을 지우고 
                 exit(0); //게임종료 
@@ -374,6 +383,29 @@ void check_key(void) {
         }
     }
     while (_kbhit()) _getch(); //키버퍼를 비움 
+}
+
+void change_n_block(void) {
+    int i, j;
+    int imsi;
+    
+    imsi = rand() % 7;
+    if (check_n_crush(bx, by, imsi) == true) {
+        for (i = 0; i < 4; i++) { //현재좌표의 블럭을 지움  
+            for (j = 0; j < 4; j++) {
+                if (blocks[b_type][b_rotation][i][j] == 1) main_org[by + i][bx + j] = EMPTY;
+            }
+        }
+
+        b_rotation = 0;
+        b_type = imsi;
+
+        for (i = 0; i < 4; i++) { //회전된 블록을 찍음 
+            for (j = 0; j < 4; j++) {
+                if (blocks[b_type][b_rotation][i][j] == 1) main_org[by + i][bx + j] = ACTIVE_BLOCK;
+            }
+        }
+    }
 }
 
 void drop_block(void) {
@@ -393,7 +425,6 @@ void drop_block(void) {
                 }
             }
         }
-        //회전할 수 있는지 체크 후 가능하면 회전
     }
 
     if (crush_on && check_crush(bx, by + 1, b_rotation) == true) crush_on = 0; //밑이 비어있으면 crush flag 끔 
@@ -421,7 +452,18 @@ int check_crush(int bx, int by, int b_rotation) { //지정된 좌표와 회전값으로 충�
         }
     }
     return true; //하나도 안겹치면 true리턴 
-};
+}
+
+int check_n_crush(int bx, int by, int b_type) { //지정된 좌표와 새로운 모양값으로 충돌이 있는지 검사 
+    int i, j;
+
+    for (i = 0; i < 4; i++) {
+        for (j = 0; j < 4; j++) { //지정된 위치의 게임판과 블럭모양을 비교해서 겹치면 false를 리턴 
+            if (blocks[b_type][0][i][j] == 1 && main_org[by + i][bx + j] > 0) return false;
+        }
+    }
+    return true; //하나도 안겹치면 true리턴 
+}
 
 void move_block(int dir) { //블록을 이동시킴 
     int i, j;
@@ -476,10 +518,14 @@ void move_block(int dir) { //블록을 이동시킴
             }
         } 
         
-        if (level == 1 || level == 2) {
-            b_rotation = (b_rotation + 1) % 4; //회전값을 1증가시킴(3에서 4가 되는 경우는 0으로 되돌림) 
-        }
-        else if (level == 3 || level == 4) {
+        switch (level)
+        {
+        case 1:
+        case 2:
+            b_rotation = (b_rotation + 1) % 4; //회전값을 1증가시킴(3에서 4가 되는 경우는 0으로 되돌림)
+            break;
+        case 3:
+        case 4:
             if (b_type >= 1 && b_type < 4) {
                 if (b_rotation < 3) {
                     b_rotation++;
@@ -491,8 +537,9 @@ void move_block(int dir) { //블록을 이동시킴
                     b_rotation = (b_rotation + 1) % 4;
                 }
             }
-        }
-        else if (level == 5 || level == 6) {
+            break;
+        case 5:
+        case 6:
             if (b_type >= 1 && b_type < 4) {
                 if (b_rotation < 1) {
                     b_rotation++;
@@ -608,31 +655,31 @@ void check_level_up(void) {
 //.check_line()함수 내부에서 level up flag가 켜져있는 경우 점수는 없음.         
         switch (level) { //레벨별로 속도를 조절해줌. 
         case 2:
-            speed = 50;
+            speed = 75;
             break;
         case 3:
-            speed = 25;
+            speed = 50;
             break;
         case 4:
-            speed = 10;
+            speed = 30;
             break;
         case 5:
-            speed = 5;
+            speed = 20;
             break;
         case 6:
-            speed = 4;
+            speed = 15;
             break;
         case 7:
-            speed = 3;
+            speed = 10;
             break;
         case 8:
-            speed = 2;
+            speed = 5;
             break;
         case 9:
-            speed = 1;
+            speed = 3;
             break;
         case 10:
-            speed = 0;
+            speed = 2;
             break;
         }
         level_up_on = 0; //레벨업 flag꺼줌
