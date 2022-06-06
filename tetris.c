@@ -57,6 +57,7 @@ int b_type; //블록 종류를 저장
 int b_rotation; //블록 회전값 저장 
 int b_type_next; //다음 블록값 저장 
 int cnt_b_rot_again;
+int line_cnt; //현재까지 올라간 라인을 체크
 
 int main_org[MAIN_Y][MAIN_X]; //게임판의 정보를 저장하는 배열 모니터에 표시후에 main_cpy로 복사됨 
 int main_cpy[MAIN_Y][MAIN_X]; //즉 maincpy는 게임판이 모니터에 표시되기 전의 정보를 가지고 있음 
@@ -228,7 +229,9 @@ void reset_main(void) { //게임판을 초기화
         main_org[i][MAIN_X - 1] = WALL;
     }
     for (j = 0; j < MAIN_X; j++) { //바닥벽을 만듦 
-        main_org[MAIN_Y - 1][j] = WALL;
+        for (i = MAIN_Y - 1; i >= MAIN_Y - 1 - line_cnt; i--) {
+            main_org[i][j] = WALL;
+        }
     }
 }
 
@@ -429,7 +432,7 @@ void drop_block(void) {
 
     if (crush_on && check_crush(bx, by + 1, b_rotation) == true) crush_on = 0; //밑이 비어있으면 crush flag 끔 
     if (crush_on && check_crush(bx, by + 1, b_rotation) == false) { //밑이 비어있지않고 crush flag가 켜저있으면 
-        for (i = 0; i < MAIN_Y; i++) { //현재 조작중인 블럭을 굳힘 
+        for (i = 0; i < MAIN_Y - line_cnt; i++) { //현재 조작중인 블럭을 굳힘 
             for (j = 0; j < MAIN_X; j++) {
                 if (main_org[i][j] == ACTIVE_BLOCK) main_org[i][j] = INACTIVE_BLOCK;
             }
@@ -580,10 +583,10 @@ void move_block(int dir) { //블록을 이동시킴
 void check_line(void) {
     int i, j, k, l;
 
-    int    block_amount; //한줄의 블록갯수를 저장하는 변수 
+    int block_amount; //한줄의 블록갯수를 저장하는 변수 
     int combo = 0; //콤보갯수 저장하는 변수 지정및 초기화 
 
-    for (i = MAIN_Y - 2; i > 3;) { //i=MAIN_Y-2 : 밑쪽벽의 윗칸부터,  i>3 : 천장(3)아래까지 검사 
+    for (i = MAIN_Y - 2 - line_cnt; i > 3;) { //i=MAIN_Y-2 : 밑쪽벽의 윗칸부터,  i>3 : 천장(3)아래까지 검사 
         block_amount = 0; //블록갯수 저장 변수 초기화 
         for (j = 1; j < MAIN_X - 1; j++) { //벽과 벽사이의 블록갯루를 셈 
             if (main_org[i][j] > 0) block_amount++;
@@ -594,7 +597,7 @@ void check_line(void) {
                 cnt++; //지운 줄 갯수 카운트 증가 
                 combo++; //콤보수 증가  
             }
-            for (k = i; k > 1; k--) { //윗줄을 한칸씩 모두 내림(윗줄이 천장이 아닌 경우에만) 
+            for (k = i; k > 1 + line_cnt; k--) { //윗줄을 한칸씩 모두 내림(윗줄이 천장이 아닌 경우에만) 
                 for (l = 1; l < MAIN_X - 1; l++) {
                     if (main_org[k - 1][l] != CEILLING) main_org[k][l] = main_org[k - 1][l];
                     if (main_org[k - 1][l] == CEILLING) main_org[k][l] = EMPTY;
@@ -620,7 +623,7 @@ void check_line(void) {
 void check_level_up(void) {
     int i, j;
 
-    if (cnt >= 3) { //레벨별로 3줄씩 없애야함. 10줄이상 없앤 경우 
+    if (cnt >= 3) { //레벨별로 3줄씩 없애야함. 3줄이상 없앤 경우 
         draw_main();
         level_up_on = 1; //레벨업 flag를 띄움 
         level += 1; //레벨을 1 올림 
@@ -640,9 +643,9 @@ void check_level_up(void) {
             Sleep(200);
         }
         reset_main_cpy(); //텍스트를 지우기 위해 main_cpy을 초기화.
-//(main_cpy와 main_org가 전부 다르므로 다음번 draw()호출시 게임판 전체를 새로 그리게 됨) 
+        //(main_cpy와 main_org가 전부 다르므로 다음번 draw()호출시 게임판 전체를 새로 그리게 됨) 
 
-        for (i = MAIN_Y - 2; i > MAIN_Y - 2 - (level - 1); i--) { //레벨업보상으로 각 레벨-1의 수만큼 아랫쪽 줄을 지워줌 
+        for (i = MAIN_Y - 2 - line_cnt; i > MAIN_Y - 2 - line_cnt - (level - 1); i--) { //레벨업보상으로 각 레벨-1의 수만큼 아랫쪽 줄을 지워줌 
             for (j = 1; j < MAIN_X - 1; j++) {
                 main_org[i][j] = INACTIVE_BLOCK; // 줄을 블록으로 모두 채우고 
                 gotoxy(MAIN_X_ADJ + j, MAIN_Y_ADJ + i); // 별을 찍어줌.. 이뻐보이게 
@@ -650,9 +653,17 @@ void check_level_up(void) {
                 Sleep(20);
             }
         }
+        if (level >= 3 && level % 2 == 1) line_cnt++; //쌓아진 벽의 개수 증가시킴
         Sleep(100); //별찍은거 보여주기 위해 delay 
         check_line(); //블록으로 모두 채운것 지우기
-//.check_line()함수 내부에서 level up flag가 켜져있는 경우 점수는 없음.         
+     //.check_line()함수 내부에서 level up flag가 켜져있는 경우 점수는 없음.
+
+        if (level % 2 == 1 && level >= 3) {
+            for (j = 0; j < MAIN_X; j++) { //바닥벽을 만듦 
+                main_org[MAIN_Y - 1 - line_cnt][j] = WALL;
+            }
+        }
+
         switch (level) { //레벨별로 속도를 조절해줌. 
         case 2:
             speed = 75;
