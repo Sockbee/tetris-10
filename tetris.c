@@ -201,6 +201,7 @@ void reset(void) {
     crush_on = 0;
     cnt = 0;
     speed = 100;
+    line_cnt = 0;
 
     system("cls"); //화면지움 
     reset_main(); // main_org를 초기화 
@@ -357,7 +358,7 @@ void check_key(void) {
             case UP: //위쪽 방향키 눌렀을때 
                 if (check_crush(bx, by, (b_rotation + 1) % 4) == true) move_block(UP);
                 //회전할 수 있는지 체크 후 가능하면 회전
-                else if (crush_on == 1 && check_crush(bx, by - 1, (b_rotation + 1) % 4) == true) move_block(100);
+                else if ((crush_on == 1 && check_crush(bx, by - 1, (b_rotation + 1) % 4) == true) && level < 7) move_block(100);
             }                    //바닥에 닿은 경우 위쪽으로 한칸띄워서 회전이 가능하면 그렇게 함(특수동작)
         }
         else { //방향키가 아닌경우 
