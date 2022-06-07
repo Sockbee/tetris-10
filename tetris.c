@@ -57,7 +57,7 @@ int b_type; //블록 종류를 저장
 int b_rotation; //블록 회전값 저장 
 int b_type_next; //다음 블록값 저장 
 int cnt_b_rot_again;
-int line_cnt; //현재까지 올라간 라인을 체크
+int line_cnt; //현재까지 올라간 라인을 체크(3레벨부터 홀수레벨마다 한 줄씩 추가)
 
 int main_org[MAIN_Y][MAIN_X]; //게임판의 정보를 저장하는 배열 모니터에 표시후에 main_cpy로 복사됨 
 int main_cpy[MAIN_Y][MAIN_X]; //즉 maincpy는 게임판이 모니터에 표시되기 전의 정보를 가지고 있음 
